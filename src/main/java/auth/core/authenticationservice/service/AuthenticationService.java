@@ -1,16 +1,19 @@
 package auth.core.authenticationservice.service;
 
 import auth.core.authenticationservice.dto.AuthTokens;
+import auth.core.authenticationservice.model.LoginAttempt;
 import auth.core.authenticationservice.model.RefreshToken;
 import auth.core.authenticationservice.model.User;
+import auth.core.authenticationservice.repo.LoginAttemptRepository;
 import auth.core.authenticationservice.repo.RefreshTokenRepository;
 import auth.core.authenticationservice.repo.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -34,16 +37,22 @@ public class AuthenticationService {
 
     private final RefreshTokenRepository refreshTokenRepository;
 
+    private final LoginAttemptRepository loginAttemptRepository;
+
+    @Transactional
     public AuthTokens authenticate(final String email, final String password) {
         final var authToken = UsernamePasswordAuthenticationToken.unauthenticated(email, password);
-        authenticationManager.authenticate(authToken);
 
+        final var user = userRepository.findByEmailAndEmailVerifiedIsTrue(email);
+        try {
+            authenticationManager.authenticate(authToken);
+        } catch (AuthenticationException e) {
+            user.ifPresent(value -> saveLoginAttempt(value, false));
+            throw e;
+        }
 
-        final var user = userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new UsernameNotFoundException("User with email [%s] not found".formatted(email)));
-
-        return authenticate(user);
+//        user can't be null because is authenticated with same flow
+        return authenticate(user.get());
     }
 
     public AuthTokens authenticate(User user) {
@@ -53,6 +62,7 @@ public class AuthenticationService {
         refreshTokenEntity.setUser(user);
         refreshTokenEntity.setExpiresAt(Instant.now().plus(refreshTokenTtl));
         refreshTokenRepository.save(refreshTokenEntity);
+        saveLoginAttempt(user, true);
 
         return new AuthTokens(accessToken, refreshTokenEntity.getId().toString(), between(Instant.now(), refreshTokenEntity.getExpiresAt()));
     }
@@ -76,6 +86,14 @@ public class AuthenticationService {
         } catch (IllegalArgumentException e) {
             throw new BadCredentialsException("Invalid or expired refresh token");
         }
+    }
+
+    public void saveLoginAttempt(User user, boolean isAuthenticated) {
+        LoginAttempt loginAttempt = new LoginAttempt();
+        loginAttempt.setUser(user);
+        loginAttempt.setSuccess(isAuthenticated);
+
+        loginAttemptRepository.save(loginAttempt);
     }
 
 }

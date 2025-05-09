@@ -30,9 +30,9 @@ CREATE SEQUENCE login_attempt_id_sequence
 
 CREATE TABLE login_attempt
 (
-    id           BIGINT    NOT NULL DEFAULT NEXTVAL('login_attempt_id_sequence'),
-    user_id      BIGINT    NOT NULL,
+    id           BIGINT    PRIMARY KEY DEFAULT NEXTVAL('login_attempt_id_sequence'),
+    user_id      UUID      NOT NULL,
     attempt_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     success      BOOLEAN   NOT NULL,
-    CONSTRAINT pk_login_attempt PRIMARY KEY (id)
+    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );

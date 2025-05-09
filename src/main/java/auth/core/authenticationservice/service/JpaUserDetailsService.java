@@ -33,6 +33,7 @@ public class JpaUserDetailsService implements UserDetailsService {
             return org.springframework.security.core.userdetails.User.builder()
                     .username(email)
                     .password(user.getPassword())
+                    .disabled(!user.isEmailVerified())
                     .build();
         }).orElseThrow(() -> new UsernameNotFoundException("User with username [%s] not found".formatted(email)));
     }

@@ -36,7 +36,7 @@ public class AuthenticationController {
         return ResponseEntity.ok(new AuthenticationResponseDto(authTokens.accessToken()));
     }
 
-    @PostMapping("sign-out")
+    @PostMapping("/sign-out")
     public ResponseEntity<Void> revokeToken(@CookieValue(REFRESH_TOKEN_COOKIE_NAME) final String refreshToken) {
         authenticationService.revokeRefreshToken(refreshToken);
 

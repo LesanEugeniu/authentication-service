@@ -1,13 +1,11 @@
 package auth.core.authenticationservice.model;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.beans.ConstructorProperties;
 import java.time.Instant;
 import java.util.Objects;
 
