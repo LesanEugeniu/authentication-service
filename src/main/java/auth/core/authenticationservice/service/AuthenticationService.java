@@ -39,7 +39,6 @@ public class AuthenticationService {
 
     private final LoginAttemptRepository loginAttemptRepository;
 
-    @Transactional
     public AuthTokens authenticate(final String email, final String password) {
         final var authToken = UsernamePasswordAuthenticationToken.unauthenticated(email, password);
 
